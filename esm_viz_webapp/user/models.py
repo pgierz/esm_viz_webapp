@@ -3,6 +3,7 @@
 import datetime as dt
 
 from flask_login import UserMixin
+import simplepam
 
 from esm_viz_webapp.database import (
     Column,
@@ -38,8 +39,9 @@ class User(UserMixin, SurrogatePK, Model):
     __tablename__ = "users"
     username = Column(db.String(80), unique=True, nullable=False)
     email = Column(db.String(80), unique=True, nullable=False)
+    # NOTE: Password isn't stored here, we get it from PAM
     #: The hashed password
-    password = Column(db.LargeBinary(128), nullable=True)
+    # password = Column(db.LargeBinary(128), nullable=True)
     created_at = Column(db.DateTime, nullable=False, default=dt.datetime.utcnow)
     first_name = Column(db.String(30), nullable=True)
     last_name = Column(db.String(30), nullable=True)
@@ -54,13 +56,9 @@ class User(UserMixin, SurrogatePK, Model):
         else:
             self.password = None
 
-    def set_password(self, password):
-        """Set password."""
-        self.password = bcrypt.generate_password_hash(password)
-
     def check_password(self, value):
         """Check password."""
-        return bcrypt.check_password_hash(self.password, value)
+        return simplepam.authenticate(self.username, self.password)
 
     @property
     def full_name(self):

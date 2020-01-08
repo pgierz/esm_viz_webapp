@@ -3,6 +3,7 @@
 from flask_wtf import FlaskForm
 from wtforms import PasswordField, StringField
 from wtforms.validators import DataRequired
+import simplepam
 
 from esm_viz_webapp.user.models import User
 
@@ -26,6 +27,9 @@ class LoginForm(FlaskForm):
 
         self.user = User.query.filter_by(username=self.username.data).first()
         if not self.user:
+            # Here, check against simplepam to see if the user name does in fact exist and can log in
+            if simplepam.authenticate(self.username.data, self.password.data):
+                return True
             self.username.errors.append("Unknown username")
             return False
 

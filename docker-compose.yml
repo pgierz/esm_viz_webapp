@@ -7,8 +7,10 @@ x-build-args: &build_args
 x-default-volumes: &default_volumes
   volumes:
     - ./:/app
-    - node-modules:/app/node_modules
-    - ./dev.db:/tmp/dev.db
+    - /app/node_modules
+    - ./dev.db:/tmp/dev.db:ro
+    - /private/etc/pam.d:/etc/pam.d:ro
+    # - /private/etc/passwd:/etc/passwd:ro
 
 services:
   flask-dev:

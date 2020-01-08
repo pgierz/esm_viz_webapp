@@ -11,6 +11,7 @@ from flask import (
 )
 from flask_login import login_required, login_user, logout_user
 
+from esm_viz_webapp.database import db
 from esm_viz_webapp.extensions import login_manager
 from esm_viz_webapp.public.forms import LoginForm
 from esm_viz_webapp.user.forms import RegisterForm
@@ -34,6 +35,16 @@ def home():
     # Handle logging in
     if request.method == "POST":
         if form.validate_on_submit():
+            # Here we can check if the user exists or not, and since we use the
+            # AWI credentials, we just add the user if not:
+            user_exists = (
+                db.session.query(db.session.query(User).filter_by(name=form.user))
+            ).scalar()
+            if not user_exists:
+                current_app.logger.info("That user does not exist!")
+                # Redirect to register form
+                return redirect(url_for("public.register"))
+            current_app.logger.info("That user should exist...")
             login_user(form.user)
             flash("You are logged in.", "success")
             redirect_url = request.args.get("next") or url_for("user.members")
@@ -57,12 +68,7 @@ def register():
     """Register new user."""
     form = RegisterForm(request.form)
     if form.validate_on_submit():
-        User.create(
-            username=form.username.data,
-            email=form.email.data,
-            password=form.password.data,
-            active=True,
-        )
+        User.create(username=form.username.data, email=form.email.data, active=True)
         flash("Thank you for registering. You can now log in.", "success")
         return redirect(url_for("public.home"))
     else:
